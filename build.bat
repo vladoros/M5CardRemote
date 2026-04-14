@@ -1,5 +1,8 @@
 @echo off
+setlocal enabledelayedexpansion
 cd /d "%~dp0"
+
+set VERSION=0.1
 
 if "%1"=="" goto build
 if "%1"=="build" goto build
@@ -13,7 +16,7 @@ goto usage
     rmdir /s /q build 2>nul
     mkdir build
     pio run
-    move .pio\build\m5stack-cardputer\firmware.bin build\M5CardRemote.bin
+    move .pio\build\m5stack-cardputer\firmware.bin build\M5CardRemote-%VERSION%.bin
     goto :eof
 
 :upload

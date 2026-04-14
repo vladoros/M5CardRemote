@@ -8,6 +8,9 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  VERSION: ${{ vars.VERSION || '0.1' }}
+
 jobs:
   build:
     runs-on: ubuntu-slim
@@ -22,11 +25,11 @@ jobs:
             ~/.platformio/.cache
           key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
 
-      - run: pip3 install --upgrade --break-system-packages platformio
+      - run: make install
 
       - run: make build
 
       - uses: actions/upload-artifact@v4
         with:
-          name: firmware
-          path: build/M5CardRemote.bin
+          name: M5CardRemote-${{ env.VERSION }}-${{ github.sha }}
+          path: build/M5CardRemote-${{ env.VERSION }}.bin
