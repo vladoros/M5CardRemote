@@ -1,31 +1,42 @@
 #define DISABLE_CODE_FOR_RECEIVER
-#define SEND_PWM_BY_TIMER
 #define IR_TX_PIN 44
 #include "M5Cardputer.h"
-#include <IRremote.hpp>  // include the library
+#include <IRremote.hpp>
 #include "codes.h"
 #include "NotoSansBold15.h"
 M5Canvas sprite(&M5Cardputer.Display);
 
-uint8_t sCommand = 0x34;
-uint8_t sRepeats = 0;
+const uint32_t SAMSUNG_POWER = 0xE0E040BF;
+const uint32_t SAMSUNG_VOL_UP = 0xE0E0E01F;
+const uint32_t SAMSUNG_VOL_DOWN = 0xE0E0D02F;
+const uint32_t SAMSUNG_MUTE = 0xE0E0F00F;
+const uint32_t SAMSUNG_CH_UP = 0xE0E048B7;
+const uint32_t SAMSUNG_CH_DOWN = 0xE0E008F7;
+const uint32_t SAMSUNG_LEFT = 0xE0E0A659;
+const uint32_t SAMSUNG_UP = 0xE0E006F9;
+const uint32_t SAMSUNG_RIGHT = 0xE0E046B9;
+const uint32_t SAMSUNG_DOWN = 0xE0E08679;
+const uint32_t SAMSUNG_OK = 0xE0E016E9;
+const uint32_t SAMSUNG_HOME = 0xE0E058A7;
+const uint32_t SAMSUNG_EXIT = 0xE0E0B44B;
 
 bool tcom = false;
-bool btn[25] = { 0 };
+bool btn[23] = { 0 };
 
-unsigned short c1 = 0x026E;
-unsigned short c2 = 0x0B0C;
-unsigned short c3 = 0x7075;
-unsigned short c4 = 0x5800;
-unsigned short c5 = 0x18E3;
-int xPos[25] = { 178, 150, 178, 206, 150, 178, 206, 150, 178, 206, 118, 118, 118, 90, 90, 6, 32, 58, 32, 32, 150, 206, 90 };
-int yPos[25] = { 100, 4, 4, 4, 36, 36, 36, 68, 68, 68, 36, 92, 4, 36, 92, 78, 52, 78, 104, 78, 100, 100, 4, 0, 0 };
-int width[25] = { 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 24, 24, 24, 24, 24, 26, 26, 26, 0 };
-int heigth[25] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 38, 38, 30, 38, 38, 24, 24, 24, 24, 24, 30, 30, 30, 0 };
-String lbl[25] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "M", "+", "-", "<", "", ">", "", "OK", "", "EX", "" };
-unsigned short col[25] = { c1, c1, c1, c1, c1, c1, c1, c1, c1, c1, c2, c2, c2, c2, c2, c3, c3, c3, c3, c3, c4, c4, c5, 0 };
+const unsigned short c1 = 0x026E;
+const unsigned short c2 = 0x0B0C;
+const unsigned short c3 = 0x7075;
+const unsigned short c4 = 0x5800;
+const unsigned short c5 = 0x18E3;
+
+const int BUTTON_COUNT = 23;
+const int xPos[23] = { 178, 150, 178, 206, 150, 178, 206, 150, 178, 206, 118, 118, 118, 90, 90, 6, 32, 58, 32, 32, 150, 206, 90 };
+const int yPos[23] = { 100, 4, 4, 4, 36, 36, 36, 68, 68, 68, 36, 92, 4, 36, 92, 78, 52, 78, 104, 78, 100, 100, 4 };
+const int width[23] = { 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 26, 24, 24, 24, 24, 24, 26, 26, 26 };
+const int height[23] = { 30, 30, 30, 30, 30, 30, 30, 30, 30, 30, 38, 38, 30, 38, 38, 24, 24, 24, 24, 24, 30, 30, 30 };
+const char* lbl[23] = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "+", "-", "M", "+", "-", "<", "", ">", "", "OK", "", "EX" };
+const unsigned short col[23] = { c1, c1, c1, c1, c1, c1, c1, c1, c1, c1, c2, c2, c2, c2, c2, c3, c3, c3, c3, c3, c4, c4, c5 };
 unsigned short color = 0;
-//UI variables
 
 
 void setup() {
@@ -51,14 +62,14 @@ void draw() {
   sprite.fillRect(4, 4 + (tcom * 18), 4, 13, TFT_ORANGE);
   sprite.drawString("SAMSUNG", 47, 12);
   sprite.drawString("T-COM", 37, 30);
-  for (int i = 0; i < 23; i++) {
+  for (int i = 0; i < BUTTON_COUNT; i++) {
     if (btn[i])
       color = TFT_ORANGE;
     else
       color = col[i];
-    sprite.fillRoundRect(xPos[i], yPos[i], width[i], heigth[i], 3, color);
+    sprite.fillRoundRect(xPos[i], yPos[i], width[i], height[i], 3, color);
     sprite.setTextColor(TFT_SILVER, color);
-    sprite.drawString(lbl[i], xPos[i] + width[i] / 2, yPos[i] + heigth[i] / 2);
+    sprite.drawString(lbl[i], xPos[i] + width[i] / 2, yPos[i] + height[i] / 2);
   }
   sprite.unloadFont();
   sprite.setTextColor(TFT_SILVER, TFT_BLACK);
@@ -75,17 +86,18 @@ void draw() {
 }
 
 void loop() {
-
   M5Cardputer.update();
+
   if (M5Cardputer.BtnA.wasPressed()) {
-    IrSender.sendSAMSUNG(0xE0E040BF, 32);  //on
+    IrSender.sendSAMSUNG(SAMSUNG_POWER, 32);
     delay(30);
     draw();
   }
 
   if (M5Cardputer.Keyboard.isChange()) {
-
-    if (M5Cardputer.Keyboard.isKeyPressed(KEY_FN)) { tcom = !tcom; }
+    if (M5Cardputer.Keyboard.isKeyPressed(KEY_FN)) {
+      tcom = !tcom;
+    }
 
     if (M5Cardputer.Keyboard.isKeyPressed(KEY_TAB)) {
       IrSender.sendRaw(on, sizeof(on) / sizeof(on[0]), 38);
@@ -142,30 +154,27 @@ void loop() {
       btn[9] = 1;
     }
 
-
     if (M5Cardputer.Keyboard.isKeyPressed('s')) {
       if (tcom)
         IrSender.sendRaw(vup, sizeof(vup) / sizeof(vup[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E0E01F, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_VOL_UP, 32);
       btn[10] = 1;
     }
-
 
     if (M5Cardputer.Keyboard.isKeyPressed('z')) {
       if (tcom)
         IrSender.sendRaw(vdwn, sizeof(vdwn) / sizeof(vdwn[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E0D02F, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_VOL_DOWN, 32);
       btn[11] = 1;
     }
-
 
     if (M5Cardputer.Keyboard.isKeyPressed('m')) {
       if (tcom)
         IrSender.sendRaw(mute, sizeof(mute) / sizeof(mute[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E0F00F, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_MUTE, 32);
       btn[12] = 1;
     }
 
@@ -173,7 +182,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(cup, sizeof(cup) / sizeof(cup[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E048B7, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_CH_UP, 32);
       btn[13] = 1;
     }
 
@@ -181,7 +190,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(cdwn, sizeof(cdwn) / sizeof(cdwn[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E008F7, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_CH_DOWN, 32);
       btn[14] = 1;
     }
 
@@ -189,7 +198,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(left, sizeof(left) / sizeof(left[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E0A659, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_LEFT, 32);
       btn[15] = 1;
     }
 
@@ -197,7 +206,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(up, sizeof(up) / sizeof(up[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E006F9, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_UP, 32);
       btn[16] = 1;
     }
 
@@ -205,7 +214,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(right, sizeof(right) / sizeof(right[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E046B9, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_RIGHT, 32);
       btn[17] = 1;
     }
 
@@ -213,7 +222,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(down, sizeof(down) / sizeof(down[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E08679, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_DOWN, 32);
       btn[18] = 1;
     }
 
@@ -221,7 +230,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(ok, sizeof(ok) / sizeof(ok[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E016E9, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_OK, 32);
       btn[19] = 1;
     }
 
@@ -229,7 +238,7 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(home, sizeof(home) / sizeof(home[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E058A7, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_HOME, 32);
       btn[20] = 1;
     }
 
@@ -237,13 +246,13 @@ void loop() {
       if (tcom)
         IrSender.sendRaw(ex, sizeof(ex) / sizeof(ex[0]), 38);
       else
-        IrSender.sendSAMSUNG(0xE0E0B44B, 32);
+        IrSender.sendSAMSUNG(SAMSUNG_EXIT, 32);
       btn[21] = 1;
     }
 
     draw();
     delay(60);
-    for (int i = 0; i < 24; i++)
+    for (int i = 0; i < BUTTON_COUNT; i++)
       btn[i] = 0;
     draw();
   }
